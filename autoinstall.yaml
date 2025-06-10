@@ -1,0 +1,107 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    username: ubuntu
+    password: "$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC."
+  ssh:
+    install-server: true
+    authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
+  locale: de_DE.UTF-8
+  keyboard:
+    layout: de
+  timezone: Europe/Berlin
+  storage:
+    config:
+      - type: disk
+        id: disk0
+        match:
+          size: largest
+        wipe: superblock-recursive
+      - type: partition
+        id: part-efi
+        device: disk0
+        size: 512M
+        flag: boot
+      - type: partition
+        id: part-crypt
+        device: disk0
+        size: -1
+      - type: dm-crypt
+        id: luks0
+        name: cryptroot
+        device: part-crypt
+        key: passphrase
+        wipe: superblock
+      - type: lvm_volgroup
+        id: vg0
+        name: vg0
+        devices: [luks0]
+      - type: lvm_logical_volume
+        id: lv_root
+        name: root
+        volgroup: vg0
+        size: 100%
+      - type: format
+        id: format-efi
+        fstype: fat32
+        volume: part-efi
+      - type: format
+        id: format-root
+        fstype: ext4
+        volume: lv_root
+      - type: mount
+        id: mount-efi
+        device: format-efi
+        path: /boot/efi
+      - type: mount
+        id: mount-root
+        device: format-root
+        path: /
+  user-data:
+    disable_root: false
+  packages:
+    - curl
+    - gnupg
+    - software-properties-common
+late-commands:
+  - curtin in-target -- apt update
+  - curtin in-target -- apt install -y clevis clevis-luks clevis-initramfs uuid-runtime curl gnupg software-properties-common
+
+  # 🔐 Backup‑Key (UUID4), sicher in /root/.luks, LUKS + TPM
+  - curtin in-target -- bash -c '
+      mkdir -m700 /root/.luks;
+      uuidgen > /root/.luks/backup.key;
+      chmod 600 /root/.luks/backup.key;
+      cryptsetup luksAddKey /dev/disk/by-id/dm-name-cryptroot /root/.luks/backup.key;
+      clevis luks bind -d /dev/disk/by-id/dm-name-cryptroot tpm2 "{}" < /root/.luks/backup.key;
+      update-initramfs -u;
+    '
+
+  # 🖥️ Hostname LIX+4‑Ziffern
+  - curtin in-target -- bash -c '
+      RAND=$(head /dev/urandom | tr -dc 0-9 | head -c 4);
+      HOST="LIX$RAND";
+      hostnamectl set-hostname "$HOST";
+      echo "$HOST" > /etc/hostname;
+      sed -i "s/127.0.1.1.*/127.0.1.1 $HOST/" /etc/hosts;
+    '
+
+  # 🌐 Microsoft Edge installieren
+  - curtin in-target -- bash -c '
+      curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg;
+      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list;
+      apt update && apt install -y microsoft-edge-stable;
+    '
+
+  # 📥 Intune Portal installieren
+  - curtin in-target -- bash -c '
+      curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
+      sh -c "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main\" > /etc/apt/sources.list.d/microsoft-prod.list";
+      apt update;
+      apt install -y intune-portal;
+    '
+
+runcmd:
+  - echo "Installation abgeschlossen"
