@@ -1,10 +1,16 @@
+#cloud-config
 autoinstall:
   version: 1
-  identity:
-    username: ubuntu
-    password: "$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC."
+  user-data:
+    users:
+    - name: g_admin
+      passwd: "$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC."
+      shell: /bin/bash
+      lock-passwd: false
+      groups: users
   ssh:
     install-server: true
+    allow-pw: false
     authorized-keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
   locale: de_DE.UTF-8
