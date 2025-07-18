@@ -1,77 +1,78 @@
 #cloud-config
 autoinstall:
   version: 1
+
+  interactive-sections:
+    - user-data
+
   user-data:
     disable_root: false
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
     locale: de_DE.UTF-8
     keyboard:
       layout: de
     timezone: Europe/Berlin
     packages:
-      - ansible
-      - clevis
-      - clevis-luks
-      - clevis-initramfs
       - curl
       - gnupg
       - software-properties-common
-      - uuid-runtime
     runcmd:
       - echo "Installation abgeschlossen"
 
   storage:
     config:
-      - type: disk
-        id: disk0
+      - id: disk0
+        type: disk
         match:
           size: largest
+        ptable: gpt
         wipe: superblock-recursive
-      - type: partition
-        id: part-efi
+      - id: part-efi
+        type: partition
         device: disk0
         size: 512M
         flag: boot
-      - type: partition
-        id: part-crypt
+        grub_device: true
+      - id: format-efi
+        type: format
+        volume: part-efi
+        fstype: fat32
+      - id: mount-efi
+        type: mount
+        device: format-efi
+        path: /boot/efi
+      - id: part-crypt
+        type: partition
         device: disk0
         size: -1
-      - type: dm-crypt
-        id: luks0
+      - id: luks0
+        type: dm_crypt
+        volume: part-crypt
         name: cryptroot
-        device: part-crypt
         key: passphrase
         wipe: superblock
-      - type: lvm_volgroup
-        id: vg0
+      - id: vg0
+        type: lvm_volgroup
         name: vg0
         devices: [luks0]
-      - type: lvm_logical_volume
-        id: lv_root
+      - id: lv-root
+        type: lvm_partition
         name: root
         volgroup: vg0
         size: 100%
-      - type: format
-        id: format-efi
-        fstype: fat32
-        volume: part-efi
-      - type: format
-        id: format-root
+      - id: format-root
+        type: format
+        volume: lv-root
         fstype: ext4
-        volume: lv_root
-      - type: mount
-        id: mount-efi
-        device: format-efi
-        path: /boot/efi
-      - type: mount
-        id: mount-root
+      - id: mount-root
+        type: mount
         device: format-root
         path: /
 
   late-commands:
     - curtin in-target -- apt update
     - curtin in-target -- apt install -y clevis clevis-luks clevis-initramfs uuid-runtime curl gnupg software-properties-common
-
-    # 🔐 Backup‑Key (UUID4), LUKS + TPM
     - curtin in-target -- bash -c '
         mkdir -m700 /root/.luks;
         uuidgen > /root/.luks/backup.key;
@@ -80,8 +81,6 @@ autoinstall:
         clevis luks bind -d /dev/disk/by-id/dm-name-cryptroot tpm2 "{}" < /root/.luks/backup.key;
         update-initramfs -u;
       '
-
-    # 🖥️ Zufälliger Hostname wie "LIX1234"
     - curtin in-target -- bash -c '
         RAND=$(head /dev/urandom | tr -dc 0-9 | head -c 4);
         HOST="LIX$RAND";
@@ -89,30 +88,19 @@ autoinstall:
         echo "$HOST" > /etc/hostname;
         sed -i "s/127.0.1.1.*/127.0.1.1 $HOST/" /etc/hosts;
       '
-
-    # 🌐 Microsoft Edge installieren
     - curtin in-target -- bash -c '
-        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg;
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list;
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+          | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg;
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] \
+          https://packages.microsoft.com/repos/edge stable main" \
+          > /etc/apt/sources.list.d/microsoft-edge.list;
         apt update && apt install -y microsoft-edge-stable;
       '
-
-    # 📥 Intune Portal installieren
     - curtin in-target -- bash -c '
-        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" > /etc/apt/sources.list.d/microsoft-prod.list;
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+          | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] \
+          https://packages.microsoft.com/ubuntu/22.04/prod jammy main" \
+          > /etc/apt/sources.list.d/microsoft-prod.list;
         apt update && apt install -y intune-portal;
-      '
-
-    # 🧩 Intune Portal Autostart für alle neuen Benutzer
-    - curtin in-target -- bash -c '
-        mkdir -p /etc/skel/.config/autostart
-        echo "[Desktop Entry]" > /etc/skel/.config/autostart/intune-portal.desktop
-        echo "Type=Application" >> /etc/skel/.config/autostart/intune-portal.desktop
-        echo "Name=Intune Portal" >> /etc/skel/.config/autostart/intune-portal.desktop
-        echo "Exec=intune-portal" >> /etc/skel/.config/autostart/intune-portal.desktop
-        echo "X-GNOME-Autostart-enabled=true" >> /etc/skel/.config/autostart/intune-portal.desktop
-        echo "NoDisplay=false" >> /etc/skel/.config/autostart/intune-portal.desktop
-        echo "Terminal=false" >> /etc/skel/.config/autostart/intune-portal.desktop
-        chmod 644 /etc/skel/.config/autostart/intune-portal.desktop
       '
