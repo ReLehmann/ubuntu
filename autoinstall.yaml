@@ -22,32 +22,32 @@ autoinstall:
       layout: de
     timezone: Europe/Berlin
 
-late-commands:
-  - curtin in-target -- bash -c '
-      apt-get purge -y gnome-initial-setup;
-      ubuntu-report -f send no;
-    '
+  late-commands:
+    - curtin in-target -- bash -c '
+        apt-get purge -y gnome-initial-setup;
+        ubuntu-report -f send no;
+      '
 
-  # 🖥️ Hostname LIX+4‑Ziffern
-  - curtin in-target -- bash -c '
-      RAND=$(head /dev/urandom | tr -dc 0-9 | head -c 4);
-      HOST="LIX$RAND";
-      hostnamectl set-hostname "$HOST";
-      echo "$HOST" > /etc/hostname;
-      sed -i "s/127.0.1.1.*/127.0.1.1 $HOST/" /etc/hosts;
-    '
+    # 🖥️ Hostname LIX+4‑Ziffern
+    - curtin in-target -- bash -c '
+        RAND=$(head /dev/urandom | tr -dc 0-9 | head -c 4);
+        HOST="LIX$RAND";
+        hostnamectl set-hostname "$HOST";
+        echo "$HOST" > /etc/hostname;
+        sed -i "s/127.0.1.1.*/127.0.1.1 $HOST/" /etc/hosts;
+      '
 
-  # 🌐 Microsoft Edge installieren
-  - curtin in-target -- bash -c '
-      curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg;
-      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list;
-      apt update && apt install -y microsoft-edge-stable;
-    '
+    # 🌐 Microsoft Edge installieren
+    - curtin in-target -- bash -c '
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg;
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list;
+        apt update && apt install -y microsoft-edge-stable;
+      '
 
-  # 📥 Intune Portal installieren
-  - curtin in-target -- bash -c '
-      curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
-      sh -c "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main\" > /etc/apt/sources.list.d/microsoft-prod.list";
-      apt update;
-      apt install -y intune-portal;
-    '
+    # 📥 Intune Portal installieren
+    - curtin in-target -- bash -c '
+        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
+        sh -c "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main\" > /etc/apt/sources.list.d/microsoft-prod.list";
+        apt update;
+        apt install -y intune-portal;
+      '
