@@ -3,11 +3,6 @@ autoinstall:
   version: 1
   user-data:
     disable_root: false
-    ssh:
-      install-server: true
-      allow-pw: false
-      authorized-keys:
-        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
     locale: de_DE.UTF-8
     keyboard:
       layout: de
@@ -112,14 +107,12 @@ autoinstall:
     # 🧩 Intune Portal Autostart für alle neuen Benutzer
     - curtin in-target -- bash -c '
         mkdir -p /etc/skel/.config/autostart
-        cat > /etc/skel/.config/autostart/intune-portal.desktop <<EOF
-[Desktop Entry]
-Type=Application
-Name=Intune Portal
-Exec=intune-portal
-X-GNOME-Autostart-enabled=true
-NoDisplay=false
-Terminal=false
-EOF
+        echo "[Desktop Entry]" > /etc/skel/.config/autostart/intune-portal.desktop
+        echo "Type=Application" >> /etc/skel/.config/autostart/intune-portal.desktop
+        echo "Name=Intune Portal" >> /etc/skel/.config/autostart/intune-portal.desktop
+        echo "Exec=intune-portal" >> /etc/skel/.config/autostart/intune-portal.desktop
+        echo "X-GNOME-Autostart-enabled=true" >> /etc/skel/.config/autostart/intune-portal.desktop
+        echo "NoDisplay=false" >> /etc/skel/.config/autostart/intune-portal.desktop
+        echo "Terminal=false" >> /etc/skel/.config/autostart/intune-portal.desktop
         chmod 644 /etc/skel/.config/autostart/intune-portal.desktop
       '
