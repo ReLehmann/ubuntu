@@ -24,6 +24,8 @@ autoinstall:
 
   late-commands:
     - curtin in-target -- bash -c '
+        apt-get update;
+        apt-get install -y curl gpg
         apt-get purge -y gnome-initial-setup;
         ubuntu-report -f send no;
       '
