@@ -2,12 +2,7 @@
 autoinstall:
   version: 1
   user-data:
-    users:
-    - name: g_admin
-      passwd: "$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC."
-      shell: /bin/bash
-      lock-passwd: false
-      groups: users
+    disable_root: false
   ssh:
     install-server: true
     allow-pw: false
@@ -64,16 +59,16 @@ autoinstall:
         id: mount-root
         device: format-root
         path: /
-  user-data:
-    disable_root: false
   packages:
+    - ansible
+    - clevis
+    - clevis-luks
+    - clevis-initramfs
     - curl
     - gnupg
     - software-properties-common
+    - uuid-runtime
 late-commands:
-  - curtin in-target -- apt update
-  - curtin in-target -- apt install -y clevis clevis-luks clevis-initramfs uuid-runtime curl gnupg software-properties-common
-
   # 🔐 Backup‑Key (UUID4), sicher in /root/.luks, LUKS + TPM
   - curtin in-target -- bash -c '
       mkdir -m700 /root/.luks;
@@ -103,10 +98,7 @@ late-commands:
   # 📥 Intune Portal installieren
   - curtin in-target -- bash -c '
       curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive.gpg;
-      sh -c "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main\" > /etc/apt/sources.list.d/microsoft-prod.list";
+      sh -c "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main\" > /etc/apt/sources.list.d/microsoft-prod.list";
       apt update;
       apt install -y intune-portal;
     '
-
-runcmd:
-  - echo "Installation abgeschlossen"
