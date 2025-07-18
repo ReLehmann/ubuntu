@@ -2,10 +2,14 @@
 autoinstall:
   version: 1
 
-  interactive-sections:
-    - user-data
-
   user-data:
+    users:
+      - name: ubuntu
+        gecos: 'Ubuntu User'
+        passwd: '$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC.'
+        groups: adm, cdrom, dip, lxd, plugdev, sudo
+        shell: /bin/bash
+        lock_passwd: False
     disable_root: false
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
