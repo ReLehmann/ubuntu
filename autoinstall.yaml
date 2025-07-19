@@ -22,10 +22,13 @@ autoinstall:
       layout: de
     timezone: Europe/Berlin
 
+  packages:
+    - curl
+    - gnupg
+    - software-properties-common
+
   late-commands:
     - curtin in-target -- bash -c '
-        apt-get update;
-        apt-get install -y curl gpg
         apt-get purge -y gnome-initial-setup;
         ubuntu-report -f send no;
       '
