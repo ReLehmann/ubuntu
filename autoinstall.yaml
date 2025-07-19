@@ -8,9 +8,9 @@ autoinstall:
     - keyboard
   storage:
     layout:
-      name: lvm
+      name: hybrid
+      encrypted: yes
       sizing-policy: all
-      password: luks
   packages:
     - ansible
     - clevis
@@ -32,6 +32,16 @@ autoinstall:
         apt-get purge -y gnome-initial-setup;
         ubuntu-report -f send no;
       '
+
+    # 🛠️ System vollständig aktualisieren
+    - curtin in-target -- bash -c '
+        apt update && apt full-upgrade -y && apt autoremove -y
+      '
+    - curtin in-target -- bash -c '
+        apt install -y unattended-upgrades;
+        dpkg-reconfigure -f noninteractive unattended-upgrades;
+      '
+
     # 🖥️ Hostname LIX+6‑Ziffern
     - curtin in-target -- bash -c '
         RAND=$(head /dev/urandom | tr -dc 0-9 | head -c 6);
@@ -54,19 +64,17 @@ autoinstall:
         apt install -y intune-portal;
       '
     # ▶️ Intune Portal Autostart beim Login – echten Benutzer per /home erkennen
-    - curtin in-target -- bash -c '
-        for dir in /home/*; do
-          [ -d "$dir" ] || continue
-          USER=$(basename "$dir")
-          mkdir -p "$dir/.config/autostart"
-          echo "[Desktop Entry]" > "$dir/.config/autostart/intune-portal.desktop"
-          echo "Type=Application" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "Exec=intune-portal" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "Hidden=false" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "NoDisplay=false" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "X-GNOME-Autostart-enabled=true" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "Name=Intune Portal" >> "$dir/.config/autostart/intune-portal.desktop"
-          echo "Comment=Startet Microsoft Intune Portal automatisch" >> "$dir/.config/autostart/intune-portal.desktop"
-          chown -R "$USER:$USER" "$dir/.config"
-        done
-      '
+    - curtin in-target -- bash -c "for dir in /home/*; do \
+        [ -d \"\$dir\" ] || continue; \
+        USER=\$(basename \"\$dir\"); \
+        mkdir -p \"\$dir/.config/autostart\"; \
+        echo \"[Desktop Entry]\" > \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"Type=Application\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"Exec=intune-portal\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"Hidden=false\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"NoDisplay=false\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"X-GNOME-Autostart-enabled=true\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"Name=Intune Portal\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        echo \"Comment=Startet Microsoft Intune Portal automatisch\" >> \"\$dir/.config/autostart/intune-portal.desktop\"; \
+        chown -R \"\$USER:\$USER\" \"\$dir/.config\"; \
+      done"
