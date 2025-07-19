@@ -1,32 +1,17 @@
 #cloud-config
 autoinstall:
   version: 1
-
+  interactive-sections:
+    - identity
   storage:
     layout:
-      name: direct
-
-  user-data:
-    users:
-      - name: ubuntu
-        gecos: 'Ubuntu User'
-        passwd: '$6$n/Obou/i.RfHjEn6$Wxfg2IRXP/D9mrTLdqOaddR4BPWMA5ddu83XE7bvhGkaSwUkG1CZKdF9SYA8Kf1PlPTvnR/pDBvTq0WYBUXIC.'
-        groups: adm, cdrom, dip, lxd, plugdev, sudo
-        shell: /bin/bash
-        lock_passwd: False
-    disable_root: false
-    ssh_authorized_keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4wGFQtP60UQDmmPzvCaLjEXG98iPBIkelnjVgGifkA
-    locale: de_DE.UTF-8
-    keyboard:
-      layout: de
-    timezone: Europe/Berlin
-
+      name: lvm
+      sizing-policy: all
+      password: luks
   packages:
     - curl
     - gnupg
     - software-properties-common
-
   late-commands:
     - curtin in-target -- bash -c '
         apt-get purge -y gnome-initial-setup;
