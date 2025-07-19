@@ -5,7 +5,6 @@ autoinstall:
   locale: "en_US.UTF-8"
   interactive-sections:
     - identity
-    - keyboard
   storage:
     layout:
       name: hybrid
