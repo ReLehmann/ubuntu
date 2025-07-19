@@ -8,7 +8,7 @@ autoinstall:
   storage:
     layout:
       name: lvm
-      encrypted: yes
+      password: luks
       sizing-policy: all
   packages:
     - ansible
