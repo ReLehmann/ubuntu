@@ -64,7 +64,7 @@ autoinstall:
       '
     # ▶️ Intune Portal Autostart beim Login – echten Benutzer per /home erkennen
     - curtin in-target -- bash -c '
-        USER=$(getent passwd {1000..1010} | cut -d: -f1 | head -n1);
+        USER=$(ls /home | head -n1);
         HOME="/home/$USER";
         mkdir -p "$HOME/.config/autostart";
         echo "[Desktop Entry]" > "$HOME/.config/autostart/intune-portal.desktop";
