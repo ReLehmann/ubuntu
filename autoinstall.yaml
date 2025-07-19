@@ -9,7 +9,6 @@ autoinstall:
     layout:
       name: hybrid
       encrypted: yes
-      sizing-policy: all
   packages:
     - ansible
     - clevis
